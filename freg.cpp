@@ -11,7 +11,7 @@ using namespace std::chrono;
 
 using namespace std;
 
-#define N 100
+#define N 46
 
 // define fftshift and ifftshift 
 template<class ty>
@@ -34,7 +34,7 @@ int main()
 
     /// params to edit
     int red_roisize = 46;
-    int XCF_roisize = 120;
+    int XCF_roisize = 150;
 
     int data_fill[red_roisize];
     int i;
@@ -42,7 +42,7 @@ int main()
         data_fill[i]=i;
     }
 
-    int XCF_mesh = 120;
+    int XCF_mesh = 150;
 
     double roi1[N][N];
     double roi2[N][N];
@@ -101,11 +101,11 @@ int main()
     fftw_destroy_plan(q);
 
 
-// TIME FROM HERE //
-auto start = high_resolution_clock::now();
+// // TIME FROM HERE //
+// auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
 
-int iterations;
-for(iterations=0;iterations<1000;iterations++){
+// int iterations;
+// for(iterations=0;iterations<1;iterations++){
     // pointwise multiply with conjugate
     fftw_complex f[N*N];
     for (i=0; i<N*N; i++)
@@ -363,10 +363,10 @@ for(iterations=0;iterations<1000;iterations++){
     //     cout << CC2[i][j] << " "; 
     //     cout << "\n"; 
     // }
-}
-auto stop = high_resolution_clock::now(); 
-auto duration = duration_cast<milliseconds>(stop - start); 
-cout << duration.count()/1000 << endl; 
+// }
+// auto stop = high_resolution_clock::now(); 
+// auto duration = duration_cast<milliseconds>(stop - start); 
+// cout << duration.count()/(iterations+1) << endl; 
     // cout<<CCmax<<"\n";
     // cout<<row_shift3<<"\n";
     // cout<<col_shift3<<"\n";
