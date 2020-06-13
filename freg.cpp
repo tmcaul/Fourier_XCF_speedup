@@ -1,17 +1,20 @@
 #include <iostream> 
-#include <math.h>
+// #include <math.h>
 #include <fftw3.h>
 #include <complex.h>
-#include <iomanip>
-#include <cmath>
-#include <vector>
+// #include <iomanip>
+// #include <cmath>
+//#include <vector>
 
 #include <chrono> 
 using namespace std::chrono;
 
 using namespace std;
 
-#define N 46
+#define N 140
+#define red_roisize 140
+#define XCF_roisize 100
+#define XCF_mesh 300
 
 // define fftshift and ifftshift 
 template<class ty>
@@ -33,8 +36,6 @@ int main()
 {
 
     /// params to edit
-    int red_roisize = 46;
-    int XCF_roisize = 150;
 
     int data_fill[red_roisize];
     int i;
@@ -42,12 +43,10 @@ int main()
         data_fill[i]=i;
     }
 
-    int XCF_mesh = 150;
+    float roi1[N][N];
+    float roi2[N][N];
 
-    double roi1[N][N];
-    double roi2[N][N];
-
-    fftw_complex roi1_fft_in[N*N], roi1_fft_out[N*N], roi2_fft_in[N*N], roi2_fft_out[N*N]; /* double [2] */
+    fftw_complex roi1_fft_in[N*N], roi1_fft_out[N*N], roi2_fft_in[N*N], roi2_fft_out[N*N]; /* float [2] */
     fftw_plan p, q, r;
 
 ///////// Generate Matrices /////////
@@ -61,7 +60,7 @@ int main()
         }
     }
     // reshape to 1D
-    double *roi1_1d = (double *)roi1;
+    float *roi1_1d = (float *)roi1;
 
     // recast as fftw_complex
     for (i=0;i<N*N;i++)
@@ -79,7 +78,7 @@ int main()
         }
     }
     // reshape to 1D
-    double *roi2_1d = (double *)roi2;
+    float *roi2_1d = (float *)roi2;
 
         // recast as fftw_complex
     for (i=0;i<N*N;i++)
@@ -102,7 +101,7 @@ int main()
 
 
 // // TIME FROM HERE //
-// auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
+auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
 
 // int iterations;
 // for(iterations=0;iterations<1;iterations++){
@@ -115,10 +114,10 @@ int main()
     }
 
     // perform an fftshift on x
-    double f_real[N*N];
-    double f_im[N*N];
-    double f_real_shifted[N*N];
-    double f_im_shifted[N*N];
+    float f_real[N*N];
+    float f_im[N*N];
+    float f_real_shifted[N*N];
+    float f_im_shifted[N*N];
     for (i=0; i<N*N; i++)
         {
         f_real[i]=f[i][0];
@@ -134,8 +133,8 @@ int main()
         f_shifted[i][1]=f_im_shifted[i];
     }
 
-    double CC_real[XCF_roisize*2][XCF_roisize*2];
-    double CC_im[XCF_roisize*2][XCF_roisize*2];
+    float CC_real[XCF_roisize*2][XCF_roisize*2];
+    float CC_im[XCF_roisize*2][XCF_roisize*2];
 
     int ind1=XCF_roisize-floor(red_roisize/2);
     int ind2=XCF_roisize+floor((red_roisize-1)/2)+1;
@@ -158,8 +157,8 @@ int main()
 
     // put CC into fftw_complex array
     // reshape to 1D
-    double *CC_real_1d = (double *)CC_real;
-    double *CC_im_1d = (double *)CC_im;
+    float *CC_real_1d = (float *)CC_real;
+    float *CC_im_1d = (float *)CC_im;
     fftw_complex CC[XCF_roisize*XCF_roisize*4];
     for (i=0; i<XCF_roisize*XCF_roisize*4; i++)
     {
@@ -184,7 +183,7 @@ int main()
 
 
     // get maxima and locations - JUST LOOK AT REAL VALUE - replicating np.amax()
-    double chi=cc[0][0];
+    float chi=cc[0][0];
     int loc=0;
     int rloc, cloc;
 
@@ -203,8 +202,8 @@ int main()
     // get shifts in the original pixel grid
     int XCF_roisize2=2*XCF_roisize;
 
-    double row_shift;
-    double col_shift;
+    float row_shift;
+    float col_shift;
 
     if(rloc>XCF_roisize){
         row_shift = rloc - XCF_roisize2;
@@ -221,12 +220,12 @@ int main()
     row_shift*=0.5;
     col_shift*=0.5;
 
-    double row_shift2 = round(row_shift*XCF_mesh)/XCF_mesh;
-    double col_shift2 = round(col_shift*XCF_mesh)/XCF_mesh;
-    double dftshift = floor(ceil(XCF_mesh*1.5)/2);
+    float row_shift2 = round(row_shift*XCF_mesh)/XCF_mesh;
+    float col_shift2 = round(col_shift*XCF_mesh)/XCF_mesh;
+    float dftshift = floor(ceil(XCF_mesh*1.5)/2);
 
-    double roff = dftshift-row_shift2*XCF_mesh;
-    double coff = dftshift-col_shift2*XCF_mesh;
+    float roff = dftshift-row_shift2*XCF_mesh;
+    float coff = dftshift-col_shift2*XCF_mesh;
 
     // this is an imaginary number
     std::complex<double> XCF_roisize_complex = XCF_roisize;
@@ -235,21 +234,21 @@ int main()
     imag_const=sqrt(imag_const);
     std::complex<double> prefac=imag_const*(-2*(3.14159)/(XCF_roisize_complex*XCF_mesh_complex));
 
-    double c1[XCF_roisize];
+    float c1[XCF_roisize];
     for (i=0; i<XCF_roisize; i++){
         c1[i]=i;
     }
-    double c_i[XCF_roisize], r_i[XCF_roisize];
+    float c_i[XCF_roisize], r_i[XCF_roisize];
     ifftshift(c_i,c1,1,XCF_roisize);
     ifftshift(r_i,c1,1,XCF_roisize);
 
-    double dXCF_roisize=XCF_roisize;
+    float dXCF_roisize=XCF_roisize;
     for (i=0;i<XCF_roisize;i++){
     c_i[i]-=floor(dXCF_roisize/2);
     r_i[i]-=floor(dXCF_roisize/2);
     }
 
-    double r_i_red[red_roisize], c_i_red[red_roisize];
+    float r_i_red[red_roisize], c_i_red[red_roisize];
     for (i=0;i<red_roisize;i++){
         r_i_red[i]=r_i[data_fill[i]];
         c_i_red[i]=c_i[data_fill[i]];
@@ -311,7 +310,7 @@ int main()
     // also grab locations and maxima
     chi=0;
     loc=0;
-    std::complex<double> CC2[m_length][m_length];
+    std::complex<float> CC2[m_length][m_length];
     for (i = 0; i < m_length; i++){ 
         for (j = 0; j < m_length; j++){ 
             CC2[i][j] = 0; 
@@ -329,24 +328,24 @@ int main()
         } 
     } 
 
-    double rloc1=rloc-dftshift-1;
-    double cloc1=cloc-dftshift-1;
+    float rloc1=rloc-dftshift-1;
+    float cloc1=cloc-dftshift-1;
 
-    double row_shift3=row_shift2+rloc1/XCF_mesh;
-    double col_shift3=col_shift2+cloc1/XCF_mesh;
+    float row_shift3=row_shift2+rloc1/XCF_mesh;
+    float col_shift3=col_shift2+cloc1/XCF_mesh;
 
     // NORMALISE by getting autocorrelations of the inputs
-    double bf1=0;
-    double bf2=0;
+    float bf1=0;
+    float bf2=0;
     for (i=0;i<N*N;i++){
         bf1+=roi1_fft_out[i][0]*roi1_fft_out[i][0]+roi1_fft_out[i][1]*roi1_fft_out[i][1];
         bf2+=roi2_fft_out[i][0]*roi2_fft_out[i][0]+roi2_fft_out[i][1]*roi2_fft_out[i][1];
     }
 
-    double CCmax=chi/sqrt(bf1*bf2);
+    float CCmax=chi/sqrt(bf1*bf2);
 
     // get maxima and locations - JUST LOOK AT REAL VALUE - replicating np.amax()
-    // double chi=cc[0][0];
+    // float chi=cc[0][0];
     // int loc=0;
     // int rloc, cloc;
 
@@ -364,13 +363,14 @@ int main()
     //     cout << "\n"; 
     // }
 // }
-// auto stop = high_resolution_clock::now(); 
-// auto duration = duration_cast<milliseconds>(stop - start); 
-// cout << duration.count()/(iterations+1) << endl; 
+auto stop = high_resolution_clock::now(); 
+auto duration = duration_cast<milliseconds>(stop - start); 
+
+cout << duration.count() << endl; 
     // cout<<CCmax<<"\n";
     // cout<<row_shift3<<"\n";
     // cout<<col_shift3<<"\n";
 
-    // return 0;
+    return CCmax;
 }
-//g++ $(pkg-config --cflags --libs fftw3) freg.cpp -o freg && ./freg
+//g++ $(pkg-config --cflags --libs fftw3) freg.cpp -o freg -Ofast -flto
