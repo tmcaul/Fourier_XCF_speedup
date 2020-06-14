@@ -35,8 +35,6 @@ void circshift(ty *out, const ty *in, int xdim, int ydim, int xshift, int yshift
 int main()
 {
 
-    /// params to edit
-
     int data_fill[red_roisize];
     int i;
     for (i=0;i<red_roisize;i++){
@@ -267,7 +265,7 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
     std::complex<double> kernc[XCF_roisize][m_length];
     for (i = 0; i < XCF_roisize; i++) { 
         for (j = 0; j < m_length; j++) { 
-            arg = c_i[i] *  m1[j];
+            arg = c_i_red[i] *  m1[j];
             kernc[i][j]=exp(prefac*arg);
         } 
     } 
@@ -277,7 +275,7 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
     std::complex<double> kernr[m_length][XCF_roisize];
     for (i = 0; i < m_length; i++) { 
         for (j = 0; j < XCF_roisize; j++) { 
-            arg = m2[i] *  c_i[j];
+            arg = m2[i] *  r_i_red[j];
             kernr[i][j]=exp(prefac*arg);
         } 
     } 
