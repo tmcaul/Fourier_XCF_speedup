@@ -307,4 +307,4 @@ auto duration = duration_cast<milliseconds>(stop - start);
 cout << duration.count() << endl; 
 }
 //g++ $(pkg-config --cflags --libs fftw3) freg.cpp -o freg -Ofast -flto
-//g++-9 -framework Accelerate -DEIGEN_USE_BLAS $(pkg-config --cflags --libs fftw3 eigen3) freg_eigen.cpp -o freg_eigen -Ofast -flto -msse2 -fopenmp -DNDEBUG -Wa,-q  && ./freg_eigen
+//g++-9 -framework Accelerate -DEIGEN_USE_BLAS -Ofast $(pkg-config --cflags --libs fftw3 eigen3) freg_eigen.cpp -o freg_eigen -Ofast -flto -msse2 -fopenmp -DNDEBUG -Wa,-q  && ./freg_eigen
