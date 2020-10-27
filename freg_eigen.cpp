@@ -14,8 +14,8 @@ using namespace std::chrono;
 using namespace std;
 using namespace Eigen;
 
-#define N 45
-#define red_roisize 45
+#define N 40
+#define red_roisize 40
 #define XCF_roisize 100
 #define XCF_mesh 100
 
@@ -102,6 +102,10 @@ int main()
     fftw_execute(q);
     fftw_destroy_plan(q);
 
+    double cc[XCF_roisize*XCF_roisize*4];
+    fftw_complex CC[XCF_roisize*XCF_roisize*4];
+    r = fftw_plan_dft_c2r_2d(XCF_roisize*2, XCF_roisize*2, CC, cc, FFTW_BACKWARD);
+
 /////////  /////////
 
 // // TIME FROM HERE // - this is to functionalise
@@ -160,7 +164,6 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
     // reshape to 1D
     float *CC_real_1d = (float *)CC_real;
     float *CC_im_1d = (float *)CC_im;
-    fftw_complex CC[XCF_roisize*XCF_roisize*4];
     for (i=0; i<XCF_roisize*XCF_roisize*4; i++)
     {
         CC[i][0]=CC_real_1d[i];
@@ -168,27 +171,25 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
     }
 
 
-    // THIS IS SLOW //
+    // THIS IS SLOW // - about 40-45% of runtime
     // inverse FFT CC
-    fftw_complex cc[XCF_roisize*XCF_roisize*4];
-    r = fftw_plan_dft_2d(XCF_roisize*2, XCF_roisize*2, CC, cc, FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(r);
     // normalise
     for (i=0; i<XCF_roisize*XCF_roisize*4; i++){
-        cc[i][0]*=1./(XCF_roisize*XCF_roisize*4);
-        cc[i][1]*=1./(XCF_roisize*XCF_roisize*4);
+        cc[i]*=1./(XCF_roisize*XCF_roisize*4);
+        // cc[i][1]*=1./(XCF_roisize*XCF_roisize*4);
     }
     fftw_destroy_plan(r);
     void fftw_cleanup_threads(void);
 
         // get maxima and locations - JUST LOOK AT REAL VALUE - replicating np.amax()
-        float chi=cc[0][0];
+        float chi=cc[0];
         int loc=0;
         int rloc, cloc;
 
         for (i=0; i<XCF_roisize*XCF_roisize*4; i++){
-            if (cc[i][0]>chi){
-                chi=cc[i][0];
+            if (cc[i]>chi){
+                chi=cc[i];
                 loc=i;
             }
         }
@@ -262,6 +263,8 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
             m2(i,0)=i-roff;
         }
 
+        // here to the end takes about 60% of the runtime
+
         Eigen::MatrixXcd kernc=prefac*c_i_red*m1;
         kernc= kernc.array().exp().matrix();
         Eigen::MatrixXcd kernr=prefac*m2*r_i_red;
@@ -277,7 +280,7 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
                 kern((i-col)/N,col)=comp1*comp2;
         }
 
-        Eigen::MatrixXcd CC2=kernr*kern*kernc;
+        Eigen::MatrixXcd CC2=kernr*kern*kernc; //this one line takes about 40% of the runtime!
 
         // get maximum value and index
         int rloc_cc2, cloc_cc2;
@@ -302,7 +305,7 @@ auto start = high_resolution_clock::now(); // WATCH FOR MEMORY LEAK
         
 std::cout<<CCmax<<"\n";
 auto stop = high_resolution_clock::now(); 
-auto duration = duration_cast<milliseconds>(stop - start); 
+auto duration = duration_cast<microseconds>(stop - start); 
 
 cout << duration.count() << endl; 
 }
